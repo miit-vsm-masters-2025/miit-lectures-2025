@@ -81,19 +81,40 @@ Output:
 import gc
 
 class Node:
-    def __init__(self):
+    def __init__(self, name: str):
+        self.name = name
         self.ref = None
     def __del__(self):
-        print("Finalized")
+        print(f"Finalized {self.name}")
 
-a = Node(); b = Node()
-a.ref = b; b.ref = a  # цикл ссылок
-del a, b
+a = Node("a")
+b = Node("b")
+c = Node("c")
+
+# a и b ссылаются друг на друга, c - ни на кого
+a.ref = b
+b.ref = a
+
+# Удаляем ссылки на объекты. Нода c уничтожится сразу, т.к. сработает reference counting. Остальные - только после GC.
+print("Performing del...")
+del a, b, c
+
+# Явно форсируем GC
 print("After del, forcing GC...")
-unreachable = gc.collect()  # без этого объекты могут не освободиться сразу
+unreachable = gc.collect()
+
 print("Unreachable objects:", unreachable)
 ```
 
+Output:
+```
+Performing del...
+Finalized c
+After del, forcing GC...
+Finalized a
+Finalized b
+Unreachable objects: 16
+```
 
 ### Слабые ссылки для разрыва циклов
 ```python
@@ -255,8 +276,8 @@ if __name__ == "__main__":
 ```
 
 
-### Java: AOT/JIT обсуждать лучше теоретически, но можно показать простую «горячую» функцию
-```textmate
+### Java: JIT
+```java
 // Java
 public class HotLoop {
     static long work(int n) {
