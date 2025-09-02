@@ -74,6 +74,26 @@ Output:
 ['done 0', 'done 1', 'done 2', 'done 3', 'done 4'] in 1.0 s
 ```
 
+
+### Java: JIT
+```java
+// Java
+public class HotLoop {
+    static long work(int n) {
+        long s = 0;
+        for (int i = 0; i < 10_000_000; i++) s += i % n;
+        return s;
+    }
+    public static void main(String[] args) {
+        for (int i = 0; i < 10; i++) {
+            long t = System.nanoTime();
+            work(97); // JIT «разогреется», поздние итерации быстрее
+            System.out.println((System.nanoTime() - t)/1e6 + " ms");
+        }
+    }
+}
+```
+
 ### Go: «встроенная реактивность» — горутины и каналы
 ```textmate
 // Go
@@ -169,12 +189,12 @@ class Node:
 a = Node(); b = Node()
 a.ref = weakref.ref(b)  # слабая ссылка
 b.ref = a               # обычная
-del a, b  # объекты освобождаются без участия цикличного GC
+del a, b  # объекты очищаются без участия GC
 ```
 
 
 ### Rust: borrow checker — запрещённая двойная мутабельная ссылка
-```textmate
+```rust
 // Rust
 fn main() {
     let mut s = String::from("hi");
@@ -187,7 +207,7 @@ fn main() {
 
 
 ### Rust: передача данных между потоками безопасно (Send + 'static), совместное владение через Arc
-```textmate
+```rust
 // Rust
 use std::sync::{Arc, Mutex};
 use std::thread;
@@ -270,24 +290,4 @@ def serve():
 
 if __name__ == "__main__":
     serve()
-```
-
-
-### Java: JIT
-```java
-// Java
-public class HotLoop {
-    static long work(int n) {
-        long s = 0;
-        for (int i = 0; i < 10_000_000; i++) s += i % n;
-        return s;
-    }
-    public static void main(String[] args) {
-        for (int i = 0; i < 10; i++) {
-            long t = System.nanoTime();
-            work(97); // JIT «разогреется», поздние итерации быстрее
-            System.out.println((System.nanoTime() - t)/1e6 + " ms");
-        }
-    }
-}
 ```
