@@ -256,7 +256,7 @@ def create_item(item: Item):
 
 ### Микросервисы: gRPC — определение контракта и сервер (Python)
 .proto:
-```
+```protobuf
 // Proto
 syntax = "proto3";
 package demo;
