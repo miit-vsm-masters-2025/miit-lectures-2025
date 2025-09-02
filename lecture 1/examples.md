@@ -74,6 +74,47 @@ Output:
 ['done 0', 'done 1', 'done 2', 'done 3', 'done 4'] in 1.0 s
 ```
 
+### Go: «встроенная реактивность» — горутины и каналы
+```textmate
+// Go
+package main
+
+import (
+	"fmt"
+	"time"
+)
+
+func worker(id int, ch chan<- string) {
+	time.Sleep(500 * time.Millisecond)
+	ch <- fmt.Sprintf("done %d", id)
+}
+
+func main() {
+	ch := make(chan string)
+	for i := 0; i < 5; i++ {
+		go worker(i, ch)
+	}
+	for i := 0; i < 5; i++ {
+		fmt.Println(<-ch)
+	}
+}
+```
+
+### C: ручное управление памятью, пример «выстрела в ногу» (use-after-free)
+```textmate
+// C
+#include <stdio.h>
+#include <stdlib.h>
+
+int main() {
+    int *p = malloc(sizeof(int));
+    *p = 42;
+    free(p);
+    // Опасно: использование освобожденной памяти — неопределенное поведение
+    printf("%d\n", *p); 
+    return 0;
+}
+```
 
 ### Reference counting и циклические ссылки в Python
 ```python
@@ -129,50 +170,6 @@ a = Node(); b = Node()
 a.ref = weakref.ref(b)  # слабая ссылка
 b.ref = a               # обычная
 del a, b  # объекты освобождаются без участия цикличного GC
-```
-
-
-### C: ручное управление памятью, пример «выстрела в ногу» (use-after-free)
-```textmate
-// C
-#include <stdio.h>
-#include <stdlib.h>
-
-int main() {
-    int *p = malloc(sizeof(int));
-    *p = 42;
-    free(p);
-    // Опасно: использование освобожденной памяти — неопределенное поведение
-    printf("%d\n", *p); 
-    return 0;
-}
-```
-
-
-### Go: «встроенная реактивность» — горутины и каналы
-```textmate
-// Go
-package main
-
-import (
-	"fmt"
-	"time"
-)
-
-func worker(id int, ch chan<- string) {
-	time.Sleep(500 * time.Millisecond)
-	ch <- fmt.Sprintf("done %d", id)
-}
-
-func main() {
-	ch := make(chan string)
-	for i := 0; i < 5; i++ {
-		go worker(i, ch)
-	}
-	for i := 0; i < 5; i++ {
-		fmt.Println(<-ch)
-	}
-}
 ```
 
 
