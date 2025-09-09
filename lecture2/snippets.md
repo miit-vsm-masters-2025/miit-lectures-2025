@@ -75,3 +75,9 @@ services:
       - "8000:8000"
     restart: unless-stopped
 ```
+
+## Github Organization
+https://github.com/miit-vsm-masters-2025
+
+## Markdown-редактор
+https://md.wtrn.ru/fXv62VAaR82KeQg1BhXIhQ
