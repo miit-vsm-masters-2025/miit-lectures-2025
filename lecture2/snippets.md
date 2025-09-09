@@ -1,11 +1,9 @@
 # Lecture 2 snippets
 
 ## uv
-
 https://docs.astral.sh/uv/
 
 ## Fastapi app
-
 https://fastapi.tiangolo.com/
 
 ```python
@@ -59,4 +57,21 @@ RUN uv sync
 COPY . .
 
 CMD ["uv", "run", "python", "main.py"]
+```
+
+## build.sh
+```bash
+set -e
+docker build -t miit/demo-app .
+#docker push miit/wtrn-news
+```
+
+## Docker Compose
+```yaml
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
 ```
