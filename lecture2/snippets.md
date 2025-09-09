@@ -1,4 +1,7 @@
-# Lecture 2 snippets
+# Lecture 2
+
+# Telemost
+https://telemost.yandex.ru/j/50516757095107
 
 ## uv
 https://docs.astral.sh/uv/
