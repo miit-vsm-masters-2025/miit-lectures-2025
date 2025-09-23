@@ -1,3 +1,4 @@
-:80 {
+https://localhost:443, https://test.wtrn.ru:443 {
+  tls /etc/caddy/cert.pem /etc/caddy/key.pem
 	respond / "Hello World" 200
 }
