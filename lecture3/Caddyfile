@@ -1,4 +1,10 @@
 https://localhost:443, https://test.wtrn.ru:443 {
-  tls /etc/caddy/cert.pem /etc/caddy/key.pem
+  tls /etc/caddy/cert.pem /etc/caddy/key.pem {
+    client_auth {
+      mode require_and_verify
+      trust_pool file /etc/caddy/ca.pem
+    }
+  }
+  log
 	respond / "Hello World" 200
 }

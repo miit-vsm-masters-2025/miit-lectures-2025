@@ -8,3 +8,4 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile
       - ./cert.pem:/etc/caddy/cert.pem
       - ./key.pem:/etc/caddy/key.pem
+      - ./ca.pem:/etc/caddy/ca.pem

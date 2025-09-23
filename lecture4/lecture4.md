@@ -39,6 +39,9 @@ ExecStart=/usr/bin/dockerd -H fd:// -H tcp://0.0.0.0:2376 --tlsverify --tlscacer
   - Для пробрасывания дополнительных параметров можно использовать systemd unit drop-in. См. пример docker-drop-in.conf ниже.
   - После создания drop-in файла нужно заставить systemd перечитать конфиги (systemctl daemon reload) и рестартовать докер (systemctl restart docker).
   - Убедиться, что все стартовало хорошо, можно командами `systemctl status docker` и `journalctl -u docker -f -n 100`
+- Дальше на клиенте достаточно добавить переменные окружения (например в .bashrc):
+  - export DOCKER_HOST=tcp://192.168.0.5:2376; export DOCKER_TLS_VERIFY=1; export DOCKER_CERT_PATH=~/.docker/certs
+  - В папке ~/.docker/certs должны лежать cert.pem и key.pem
 
 ## Подготовка к реализации секурной прокси
 
