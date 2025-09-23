@@ -19,6 +19,16 @@ while true; do
 done
 ```
 
+/etc/systemd/system/docker.service.d/docker-drop-in.conf
+```
+[Unit]
+After=systemd-cryptsetup@ssd1.service # Не относится к теме занятия, но просто пример из реальной жизни, как заставить докер стартовать после другого сервиса
+
+[Service]
+ExecStart=
+ExecStart=/usr/bin/dockerd -H fd:// -H tcp://0.0.0.0:2376 --tlsverify --tlscacert=/etc/docker/ca.pem --tlscert=/etc/docker/server-cert.pem --tlskey=/etc/docker/server-key.pem
+```
+
 ## Удаленное подключение к Docker-демону
 - Обычно взаимодействие с докер-демоном происходит через unix-сокет `/var/run/docker.sock`
   - Этот сокет потенциально можно смонтировать внутрь любого докер-контейнера, тем самым выдав доступ к любым действиям с докером (а заодно и рутовые права на хост, так что осторожнее)
