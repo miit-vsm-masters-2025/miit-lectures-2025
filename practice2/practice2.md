@@ -20,10 +20,10 @@
 sessions:
   cookieDomain: .secure-proxy.lan
   cookieName: SECURE_PROXY_SESSION
-  ttl_seconds: 180
+  ttlSeconds: 180
 users:
   - username: user1
-    totp_secret: FC5PJKPSPKIO5HE2Y5YDIEJJ3ZOJ5J3K
+    totpSecret: FC5PJKPSPKIO5HE2Y5YDIEJJ3ZOJ5J3K
     availableDomains:
       - site1.secure-proxy.lan
 upstreams:
