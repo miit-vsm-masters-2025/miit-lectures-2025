@@ -60,6 +60,7 @@ ExecStart=/usr/bin/dockerd -H fd:// -H tcp://0.0.0.0:2376 --tlsverify --tlscacer
     - Логи: https://github.com/uber-go/zap
     - Конфиги: https://github.com/ilyakaznacheev/cleanenv
     - Веб-фреймворк: https://gin-gonic.com/
+    - TOTP: https://pkg.go.dev/github.com/pquerna/otp
     - Dependency injection: https://github.com/google/wire
       - Но месяц назад Гугл его молча сослал в архив, кто наследник пока неясно: https://www.reddit.com/r/golang/comments/1mnub7p/wire_repo_archived_without_notice/
   - Хорошее место чтобы начать изучение Go: https://go.dev/tour/welcome/1
