@@ -182,3 +182,180 @@ postgres=# EXPLAIN ANALYSE SELECT * FROM accounts WHERE username LIKE 'a%';
 ```
 
 ## Транзакции и изоляция транзакций
+
+https://postgrespro.ru/docs/postgrespro/17/transactions
+
+В postgres есть транзакции. Они гарантируют, что какой-то набор изменений либо применится целиком, либо не применится
+совсем.
+
+Транзакция начинается командой BEGIN (или START TRANSACTION) и завершается либо командой COMMIT, либо ROLLBACK.
+
+Если в процессе транзакции были ошибки - по умолчанию COMMIT в конце приведет к ROLLBACK. Разные GUI-клиенты могут
+неявно отлавливать такие ошибки за счет использования SAVEPOINT и ROLLBACK TO SAVEPOINT (например так делают продукты
+JetBrains).
+
+```postgresql
+SELECT * FROM accounts;
+
+BEGIN;
+UPDATE accounts SET balance = balance - 50 WHERE id = 1;
+UPDATE accounts SET balance = balance + 50 WHERE id = 2;
+
+-- В рамках транзакции видим собственные изменения
+SELECT * FROM accounts;
+
+-- Ошибка: пытаемся создать новую строку с уже существующим ID
+INSERT INTO accounts(id, balance) VALUES (1, 100);
+COMMIT;
+
+-- Изменения не применились
+SELECT * FROM accounts;
+```
+
+По умолчанию транзакция видит собственные незакомиченные изменения и закомиченные изменения из соседних транзакций. Это
+дефолтный уровень изоляции транзакций - READ COMMITTED.
+
+## Уровни изоляции транзакций
+
+https://en.wikipedia.org/wiki/Isolation_(database_systems)
+
+Теоретически существует четыре уровня изоляции транзакций (постгрес поддерживает только три):
+
+- READ UNCOMMITTED
+    - Транзакции видят "грязные" (незакомиченные) изменения друг друга
+    - Теоретически очень дешевый и быстрый
+    - **Не поддерживается в PostgreSQL**
+- READ COMMITTED
+    - Транзакции видят только закомиченные изменения из других транзакций
+    - Это уровень изоляции транзакций по умолчанию в PostgreSQL
+    - Если в середине нашей транзакции кто-то закоммитит изменения - мы их увидим. Это называется Non-repeatable reads.
+    - Потенциально возможны потерянные изменения
+        - Транзакция A прочитала (SELECT) значение, сделала какие-то вычисления в памяти и сделала UPDATE.
+        - Между SELECT и UPDATE (из транзакции A), транзакция B успела сделать COMMIT, изменив изначальные данные
+        - Получается, что вычисления и UPDATE в транзакции A не учтут изменения из транзакции B (т.к. мы не сделали
+          повторный SELECT в A)
+- REPEATABLE READ
+    - Гарантирует, что SELECT в течение всей транзакции будет возвращать одинаковые значения (даже если кто-то успеет их
+      изменить коммитом параллельной транзакции)
+    - Но при попытке сделать UPDATE по строке, которую за время нашей транзакции кто-то успел изменить - получим ошибку
+- SERIALIZABLE
+    - Обеспечивает иллюзию последовательного исполнения транзакций.
+    - Не пересекающиеся транзакции продолжают выполняться параллельно
+    - Вы все так же можете получить ошибку вида `could not serialize access due to read/write dependencies` или
+      `could not serialize access due to concurrent update`, тогда транзакцию придется повторить.
+
+### Пример с REPEATABLE READ
+
+#### Transaction A
+
+```postgresql
+postgres=# BEGIN ISOLATION LEVEL REPEATABLE READ;
+BEGIN
+postgres=*# SELECT * FROM accounts WHERE id = 1;
+id | username | balance
+----+----------+---------
+1 | a        |     100
+(1 row)
+
+postgres=*# -- Тут происходит некоторая пауза, в которой наш прикладной код считает новое значение баланса
+postgres=*# -- Параллельно транзакция B уже успела сделать UPDATE и COMMIT
+postgres=*# -- Важно, что REPEATABLE READ продолжает при SELECT'ах показывать старое значение
+postgres=*# SELECT * FROM accounts WHERE id = 1;
+id | username | balance
+----+----------+---------
+1 | a        |     100
+(1 row)
+
+postgres=*# -- Но при попытке обновить устаревшее значение - мы получим ошибку.
+postgres=*# UPDATE accounts SET balance = 101 WHERE id = 1;
+ERROR:  could not serialize access due to concurrent update
+postgres=!# COMMIT;
+ROLLBACK
+postgres=# -- После отката транзакции мы снова видим изменения, закомиченные транзакцией B
+postgres=# SELECT * FROM accounts WHERE id = 1;
+ id | username | balance
+----+----------+---------
+  1 | a        |     102
+(1 row)
+```
+
+#### Transaction B
+
+```postgresql
+postgres=# BEGIN;
+BEGIN
+postgres=*# SELECT * FROM accounts WHERE id = 1;
+ id | username | balance
+----+----------+---------
+  1 | a        |     100
+(1 row)
+
+postgres=*# UPDATE accounts SET balance = 102 WHERE id = 1;
+UPDATE 1
+postgres=*# COMMIT;
+COMMIT
+postgres=# SELECT * FROM accounts WHERE id = 1;
+ id | username | balance
+----+----------+---------
+  1 | a        |     102
+(1 row)
+```
+
+### Write skew: различие поведения REPEATABLE READ и SERIALIZABLE
+
+#### Сценарий
+
+У нас есть таблица, в которой отмечаются дежурные врачи. По правилам - в любой момент времени хотя бы один врач должен
+быть на дежурстве.
+
+```postgresql
+CREATE TABLE doctors (
+    id SERIAL PRIMARY KEY,
+    on_call BOOLEAN NOT NULL
+);
+
+INSERT INTO doctors (on_call) VALUES (TRUE), (TRUE);
+```
+
+В интерфейсе у врача есть кнопка "уйти с дежурства". Допустим, что сейчас дежурят два врача и они нажимают ее одновременно.
+
+#### Что будет в REPEATABLE READ
+```postgresql
+postgres=# -- Transaction A
+postgres=# BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+BEGIN
+postgres=*# -- Проверяем, есть ли кто-то на смене
+postgres=*# SELECT count(*) FROM doctors WHERE on_call = TRUE;
+ count
+-------
+     2
+(1 row)
+
+postgres=*#
+postgres=*# -- Снимаем себя с дежурства
+postgres=*# UPDATE doctors SET on_call = FALSE WHERE id = 1;
+UPDATE 1
+postgres=*#
+postgres=*# -- Выполняем транзакцию B, затем коммитим A
+postgres=*# COMMIT;
+COMMIT
+postgres=# -- Видим, что дежурных врачей больше нет
+postgres=# SELECT count(*) FROM doctors WHERE on_call = TRUE;
+ count
+-------
+     0
+(1 row)
+```
+
+```postgresql
+-- Transaction B
+BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+
+-- Проверяем, есть ли кто-то на смене. Видим цифру 2, т.к. snapshot isolation
+SELECT count(*) FROM doctors WHERE on_call = TRUE;
+
+-- Снимаем себя с дежурства
+UPDATE doctors SET on_call = FALSE WHERE id = 2;
+
+COMMIT;
+```
