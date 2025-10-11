@@ -359,3 +359,53 @@ UPDATE doctors SET on_call = FALSE WHERE id = 2;
 
 COMMIT;
 ```
+
+#### Что будет в SERIALIZABLE
+```postgresql
+postgres=# -- Transaction A
+postgres=# BEGIN TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+BEGIN
+postgres=*# -- Проверяем, есть ли кто-то на смене
+postgres=*# SELECT count(*) FROM doctors WHERE on_call = TRUE;
+ count
+-------
+     2
+(1 row)
+
+postgres=*#
+postgres=*# -- Снимаем себя с дежурства
+postgres=*# UPDATE doctors SET on_call = FALSE WHERE id = 1;
+UPDATE 1
+postgres=*# -- Выполняем транзакцию B, затем коммитим A, получаем ошибку и откат.
+postgres=*# COMMIT;
+ERROR:  could not serialize access due to read/write dependencies among transactions
+DETAIL:  Reason code: Canceled on identification as a pivot, during commit attempt.
+HINT:  The transaction might succeed if retried.
+postgres=# -- Видим, что остался один дежурный врач (id = 1)
+postgres=# SELECT * FROM doctors WHERE on_call = TRUE;
+ id | on_call
+----+---------
+  1 | t
+(1 row)
+```
+
+```postgresql
+postgres=# -- Transaction B
+postgres=# BEGIN TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+BEGIN
+postgres=*#
+postgres=*# -- Проверяем, есть ли кто-то на смене. Видим цифру 2, т.к. snapshot isolation
+postgres=*# SELECT count(*) FROM doctors WHERE on_call = TRUE;
+ count
+-------
+     2
+(1 row)
+
+postgres=*#
+postgres=*# -- Снимаем себя с дежурства
+postgres=*# UPDATE doctors SET on_call = FALSE WHERE id = 2;
+UPDATE 1
+postgres=*#
+postgres=*# COMMIT;
+COMMIT
+```
