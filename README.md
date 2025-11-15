@@ -73,11 +73,11 @@ valkey, rabbitmq, kafka как брокеры сообщений
 # Занятие 10 (2 пары)
 - Планируем пробежаться по списку вопросов к экзамену
   - Список рекомендуемой литературы по разным темам
+    - Brian Ward: How Linux Works, 3rd Edition: What Every Superuser Should Know
+      - Про линукс. Очень кратко затрагивает кучу важных тем, включая базовые команды, устройство Linux и ядра, сети и протоколы, контейнеризацию.
     - Martin Kleppmann: Designing Data-Intensive Applications: The Big Ideas Behind Reliable, Scalable, and Maintainable Systems
       - Самая рекомендуемая (практически легендарная) "книга с кабанчиком". Очень хорошо рассказывает про распределенные
       - системы и их сложность. Сильно пригождается на собесах, особенно для middle+ / senior уровня.
-    - Brian Ward: How Linux Works, 3rd Edition: What Every Superuser Should Know
-      - Про линукс. Очень кратко затрагивает кучу важных тем, включая базовые команды, устройство Linux и ядра, сети и протоколы, контейнеризацию.
     - Alex Petrov: Database Internals: A Deep Dive Into How Distributed Data Systems Work
       - Про базы данных. Дополняет книжку Martin Kleppmann, но глубже погружается в тему баз данных. Чтение опциональное.
     - Mark Richards, Neal Ford: Fundamentals of Software Architecture: An Engineering Approach
